@@ -2,7 +2,7 @@ import os
 import sys
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 import config
 import download
@@ -586,7 +586,7 @@ def _parse_function(files, target_size):
     image_list = []
 
     for count, filename in enumerate(files):
-        image_str = tf.read_file(filename)
+        image_str = tf.io.read_file(filename)
         channels = 3 if count == 0 else 1
 
         image = tf.cond(tf.image.is_jpeg(image_str),
