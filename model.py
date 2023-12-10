@@ -1,8 +1,8 @@
 import os
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow.python.tools import freeze_graph
-from tensorflow.tools.graph_transforms import TransformGraph
+#from tensorflow.tools import optimize_for_inference
 
 import config
 import download
@@ -456,7 +456,7 @@ class MSINET:
                       "strip_unused_nodes",
                       "fold_constants(ignore_errors=true)"]
 
-        optimized_graph_def = TransformGraph(graph_def,
+        optimized_graph_def = optimize_for_inference(graph_def,
                                              ["input"],
                                              ["output"],
                                              transforms)
