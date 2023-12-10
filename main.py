@@ -2,7 +2,7 @@ import argparse
 import os
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 import config
 import data
@@ -11,7 +11,7 @@ import model
 import utils
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-tf.logging.set_verbosity(tf.logging.ERROR)
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 
 def define_paths(current_path, args):
@@ -71,41 +71,42 @@ def train_model(dataset, paths, device):
         device (str): Represents either "cpu" or "gpu".
     """
 
-    iterator = data.get_dataset_iterator("train", dataset, paths["data"])
-
-    next_element, train_init_op, valid_init_op = iterator
-
-    input_images, ground_truths = next_element[:2]
-
-    input_plhd = tf.placeholder_with_default(input_images,
-                                             (None, None, None, 3),
-                                             name="input")
-    msi_net = model.MSINET()
-
-    predicted_maps = msi_net.forward(input_plhd)
-
-    optimizer, loss = msi_net.train(ground_truths, predicted_maps,
-                                    config.PARAMS["learning_rate"])
-
-    n_train_data = getattr(data, dataset.upper()).n_train
-    n_valid_data = getattr(data, dataset.upper()).n_valid
-
-    n_train_batches = int(np.ceil(n_train_data / config.PARAMS["batch_size"]))
-    n_valid_batches = int(np.ceil(n_valid_data / config.PARAMS["batch_size"]))
-
-    history = utils.History(n_train_batches,
-                            n_valid_batches,
-                            dataset,
-                            paths["history"],
-                            device)
-
-    progbar = utils.Progbar(n_train_data,
-                            n_train_batches,
-                            config.PARAMS["batch_size"],
-                            config.PARAMS["n_epochs"],
-                            history.prior_epochs)
-
+    
     with tf.Session() as sess:
+        iterator = data.get_dataset_iterator("train", dataset, paths["data"])
+
+        next_element, train_init_op, valid_init_op = iterator
+
+        input_images, ground_truths = next_element[:2]
+
+        input_plhd = tf.placeholder_with_default(input_images,
+                                                (None, None, None, 3),
+                                                name="input")
+        msi_net = model.MSINET()
+
+        predicted_maps = msi_net.forward(input_plhd)
+
+        optimizer, loss = msi_net.train(ground_truths, predicted_maps,
+                                        config.PARAMS["learning_rate"])
+
+        n_train_data = getattr(data, dataset.upper()).n_train
+        n_valid_data = getattr(data, dataset.upper()).n_valid
+
+        n_train_batches = int(np.ceil(n_train_data / config.PARAMS["batch_size"]))
+        n_valid_batches = int(np.ceil(n_valid_data / config.PARAMS["batch_size"]))
+
+        history = utils.History(n_train_batches,
+                                n_valid_batches,
+                                dataset,
+                                paths["history"],
+                                device)
+
+        progbar = utils.Progbar(n_train_data,
+                                n_train_batches,
+                                config.PARAMS["batch_size"],
+                                config.PARAMS["n_epochs"],
+                                history.prior_epochs)
+
         sess.run(tf.global_variables_initializer())
         saver = msi_net.restore(sess, dataset, paths, device)
 
@@ -137,7 +138,7 @@ def train_model(dataset, paths, device):
 
             if history.valid_history[-1] == min(history.valid_history):
                 msi_net.save(saver, sess, dataset, paths["best"], device)
-                msi_net.optimize(sess, dataset, paths["best"], device)
+                #msi_net.optimize(sess, dataset, paths["best"], device)
 
                 print("\tBest model!", flush=True)
 
